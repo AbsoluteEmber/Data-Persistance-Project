@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,16 +13,21 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    
+    public Text highScoretext;
+
+    public int highscore;
+    public string highscoreName;
+
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
 
-    
     // Start is called before the first frame update
     void Start()
     {
+        LoadScore();
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -36,6 +42,11 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+        if (highscoreName != null)
+        {
+            highScoretext.text = $"Best Score: {highscoreName}: {highscore}";
+        }
+
     }
 
     private void Update()
@@ -70,7 +81,43 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        if(m_Points > highscore)
+        {
+            SaveScore();
+        }
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    class SaveData
+    {
+        public string highscoreName;
+        public int highscore;
+    }
+
+    public void SaveScore()
+    {
+        SaveData data = new SaveData();
+
+        data.highscoreName = StartGame.playerName;
+        data.highscore = m_Points;
+
+        string json = JsonUtility.ToJson(data);
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveData data = JsonUtility.FromJson<SaveData>(json);
+
+            highscoreName = data.highscoreName;
+            highscore = data.highscore;
+
+        }
+    }
+
 }
